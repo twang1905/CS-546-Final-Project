@@ -10,7 +10,7 @@ valueHistory : [{"time" : string, "value" : float}, ...]
 */
 
 import { ObjectId } from "mongodb";
-import { items, rooms, containers } from "../config/mongoCollections.js";
+import { items, rooms, containers, itemImages } from "../config/mongoCollections.js";
 import {
   getDocById,
   getAllDocs,
@@ -254,6 +254,30 @@ export async function isPublic(itemId) {
   return await containerData.isPublic(vessel._id.toString());
 }
 
+// creates an instance in the itemImages collection, which holds itemId and an array of image paths
+export async function createItemImages(itemId, pathList) {
+  //basic error check
+  itemId = validator.checkId(itemId, "itemId");
+  if (!Array.isArray(pathList)) throw 'pathList must be an array';
+
+  // check if theres already an item in the collection with a matching itemId
+  let itemImagesCollection = await itemImages();
+  let existingItem = await itemImagesCollection.findOne({ itemId: itemId });
+
+  // if there is, then delete it
+  if (existingItem) {
+    await itemImagesCollection.deleteOne({ itemId: itemId });
+  }
+
+  // add image paths to itemImages collection
+  let newImages = {
+    itemId: itemId,
+    pathList: pathList
+  }
+  let paths = await createDoc(itemImages, newImages, "image paths");
+  return paths;
+}
+
 export default {
   create,
   get,
@@ -263,5 +287,6 @@ export default {
   setCount,
   setValue,
   createExport,
-  isPublic
+  isPublic,
+  createItemImages
 };
